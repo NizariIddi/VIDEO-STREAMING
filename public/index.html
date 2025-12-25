@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecureChat Pro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <a href="#" class="navbar-brand" onclick="showLandingPage(); return false;">
+            <div class="logo"><i class="fas fa-video"></i></div>
+            <span class="brand-name">SecureChat Pro</span>
+        </a>
+        <div class="navbar-menu">
+            <a href="#" class="nav-link" onclick="showLandingPage(); return false;">Home</a>
+            <a href="#" class="nav-link" onclick="showJoinRoom(); return false;">Join Room</a>
+            <a href="#" class="nav-link" onclick="showCreateRoom(); return false;">Create Room</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Landing Page -->
+        <div id="landing-page">
+            <h1 class="hero-title">Secure Video Conferencing</h1>
+            <p class="hero-subtitle">End-to-end encrypted video calls. No downloads required.</p>
+
+            <div class="action-buttons">
+                <button class="action-button" onclick="showJoinRoom()">
+                    <i class="fas fa-sign-in-alt"></i> Join a Room
+                </button>
+                <button class="action-button secondary" onclick="showCreateRoom()">
+                    <i class="fas fa-plus-circle"></i> Create New Room
+                </button>
+            </div>
+
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-icon">🔒</div>
+                    <div>
+                        <div class="feature-title">Secure Connections</div>
+                        <div class="feature-text">Peer-to-peer WebRTC technology</div>
+                    </div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🚀</div>
+                    <div>
+                        <div class="feature-title">Lightning Fast</div>
+                        <div class="feature-text">HD video with minimal latency</div>
+                    </div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">💬</div>
+                    <div>
+                        <div class="feature-title">Secure Chat</div>
+                        <div class="feature-text">Encrypted messaging built-in</div>
+                    </div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🖥️</div>
+                    <div>
+                        <div class="feature-title">Screen Sharing</div>
+                        <div class="feature-text">Share your screen seamlessly</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Join Room -->
+        <div id="room-form" class="hidden">
+            <div class="form-container">
+                <a href="#" class="back-link" onclick="showLandingPage(); return false;">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
+                <h2 class="form-title">Join Room</h2>
+                <p class="form-subtitle">Enter the room details to join a secure call</p>
+
+                <div class="form-group">
+                    <label for="room-input">Room Name</label>
+                    <input type="text" id="room-input" placeholder="Enter room name">
+                </div>
+
+                <div class="form-group">
+                    <label for="password-input">Password (Optional)</label>
+                    <input type="password" id="password-input" placeholder="Enter password if required">
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="enable-2fa">
+                    <label for="enable-2fa">Enable Two-Factor Authentication</label>
+                </div>
+
+                <div class="info-note">
+                    <i class="fas fa-lock"></i> All calls use secure peer-to-peer connections
+                </div>
+
+                <button onclick="joinRoom()">
+                    <i class="fas fa-sign-in-alt"></i> Join Room
+                </button>
+            </div>
+        </div>
+
+        <!-- Create Room -->
+        <div id="create-room-form" class="hidden">
+            <div class="form-container">
+                <a href="#" class="back-link" onclick="showLandingPage(); return false;">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
+                <h2 class="form-title">Create Room</h2>
+                <p class="form-subtitle">Set up a new secure video room</p>
+
+                <div class="form-group">
+                    <label for="create-room-name">Room Name</label>
+                    <input type="text" id="create-room-name" placeholder="Enter a unique room name">
+                </div>
+
+                <div class="form-group">
+                    <label for="create-room-description">Description (Optional)</label>
+                    <textarea id="create-room-description" placeholder="What's this meeting about?"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="create-room-password">Password (Optional)</label>
+                    <input type="password" id="create-room-password" placeholder="Create a password">
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="create-enable-2fa">
+                    <label for="create-enable-2fa">Require 2FA for participants</label>
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="enable-waiting-room">
+                    <label for="enable-waiting-room">Enable waiting room</label>
+                </div>
+
+                <button onclick="createRoom()">
+                    <i class="fas fa-plus-circle"></i> Create Room
+                </button>
+            </div>
+        </div>
+
+        <!-- Video Chat -->
+        <div id="video-chat" class="hidden">
+            <div class="room-header">
+                <div class="room-info">
+                    <span class="room-name" id="room-name">Room Name</span>
+                    <span class="status-badge">
+                        <span class="status-dot"></span>
+                        <span id="connection-status">Connected</span>
+                    </span>
+                </div>
+            </div>
+
+            <div class="main-content">
+                <div class="video-grid">
+                    <div class="video-container" id="remote-video-container">
+                        <div class="video-label"><i class="fas fa-users"></i> Remote User</div>
+                        <video id="remoteVideo" autoplay playsinline></video>
+                    </div>
+                    <div class="video-container" id="local-video-container">
+                        <div class="video-label"><i class="fas fa-user"></i> You</div>
+                        <video id="localVideo" autoplay muted playsinline></video>
+                    </div>
+                    <div class="video-container" id="screenShareContainer" style="display: none">
+                        <div class="video-label"><i class="fas fa-desktop"></i> Screen Share</div>
+                        <video id="screenVideo" autoplay playsinline></video>
+                    </div>
+                    
+                    <!-- Floating Controls -->
+                    <div class="floating-controls">
+                        <button class="control-btn" id="toggle-mic" title="Mute/Unmute">
+                            <i class="fas fa-microphone"></i>
+                        </button>
+                        <button class="control-btn" id="toggle-camera" title="Stop/Start Video">
+                            <i class="fas fa-video"></i>
+                        </button>
+                        <button class="control-btn" id="share-screen" title="Share Screen">
+                            <i class="fas fa-desktop"></i>
+                        </button>
+                        <button class="control-btn btn-record" id="start-record" title="Start Recording">
+                            <i class="fas fa-circle"></i>
+                        </button>
+                        <button class="control-btn btn-record" id="stop-record" title="Stop Recording" style="display: none;">
+                            <i class="fas fa-stop-circle"></i>
+                        </button>
+                        <button class="control-btn btn-leave" id="leave-room" title="Leave Room">
+                            <i class="fas fa-phone-slash"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="chat-sidebar">
+                    <div class="chat-tabs">
+                        <button class="chat-tab active" onclick="switchTab('chat')">
+                            <i class="fas fa-comments"></i> Chat
+                        </button>
+                        <button class="chat-tab" onclick="switchTab('files')">
+                            <i class="fas fa-file"></i> Files
+                        </button>
+                    </div>
+
+                    <div id="chat-tab" class="chat-content active">
+                        <div class="chat-messages" id="chatMessages"></div>
+                        <div class="chat-input-container">
+                            <input type="text" id="chatInput" placeholder="Type a message...">
+                            <button onclick="sendMessage()">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="files-tab" class="chat-content">
+                        <div style="text-align: center; padding: 2rem; color: #666;">
+                            <i class="fas fa-file" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
+                            <p>Click to upload files</p>
+                            <input type="file" id="fileInput" style="display: none" multiple onchange="handleFileSelect(event)">
+                            <button onclick="document.getElementById('fileInput').click()" style="margin-top: 1rem;">
+                                <i class="fas fa-upload"></i> Upload Files
+                            </button>
+                        </div>
+                        <div class="file-list" id="fileList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2FA Modal -->
+    <div class="modal" id="twoFactorModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-shield-alt"></i> Two-Factor Authentication</h3>
+                <button class="close-modal" onclick="close2FAModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="info-note">Enter the 6-digit verification code</div>
+            <div class="verification-code-input">
+                <input type="text" maxlength="1" class="code-digit" id="code1" oninput="moveToNext(this, 'code2')">
+                <input type="text" maxlength="1" class="code-digit" id="code2" oninput="moveToNext(this, 'code3')">
+                <input type="text" maxlength="1" class="code-digit" id="code3" oninput="moveToNext(this, 'code4')">
+                <input type="text" maxlength="1" class="code-digit" id="code4" oninput="moveToNext(this, 'code5')">
+                <input type="text" maxlength="1" class="code-digit" id="code5" oninput="moveToNext(this, 'code6')">
+                <input type="text" maxlength="1" class="code-digit" id="code6">
+            </div>
+            <button onclick="verify2FA()">
+                <i class="fas fa-check-circle"></i> Verify
+            </button>
+            <p style="margin-top: 1rem; color: #888; font-size: 0.9rem; text-align: center;">
+                Didn't receive code?
+                <a href="#" onclick="resend2FA(); return false;" style="color: #667eea;">Resend</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Password Modal -->
+    <div class="modal" id="passwordModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-lock"></i> Password Required</h3>
+                <button class="close-modal" onclick="closePasswordModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="info-note">This room is password-protected</div>
+            <div class="form-group">
+                <label for="verify-password-input">Enter Password</label>
+                <input type="password" id="verify-password-input" placeholder="Room password">
+            </div>
+            <button onclick="verifyPassword()">
+                <i class="fas fa-unlock"></i> Unlock Room
+            </button>
+        </div>
+    </div>
+
+    <!-- Screen Share Modal -->
+    <div class="modal" id="screenShareModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-desktop"></i> Share Your Screen</h3>
+                <button class="close-modal" onclick="closeScreenShareModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="info-note">Choose what to share</div>
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <button onclick="startScreenShare('screen')" style="justify-content: flex-start; gap: 1rem;">
+                    <i class="fas fa-desktop"></i>
+                    <div style="text-align: left;">
+                        <div style="font-weight: 600;">Entire Screen</div>
+                        <div style="font-size: 0.85rem; opacity: 0.7;">Share everything on your screen</div>
+                    </div>
+                </button>
+                <button onclick="startScreenShare('window')" style="justify-content: flex-start; gap: 1rem;">
+                    <i class="fas fa-window-maximize"></i>
+                    <div style="text-align: left;">
+                        <div style="font-weight: 600;">Application Window</div>
+                        <div style="font-size: 0.85rem; opacity: 0.7;">Share a specific window</div>
+                    </div>
+                </button>
+                <button onclick="startScreenShare('tab')" style="justify-content: flex-start; gap: 1rem;">
+                    <i class="fas fa-chrome"></i>
+                    <div style="text-align: left;">
+                        <div style="font-weight: 600;">Browser Tab</div>
+                        <div style="font-size: 0.85rem; opacity: 0.7;">Share a Chrome tab</div>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="notification" id="notification">
+        <i class="fas fa-info-circle"></i>
+        <span id="notification-text"></span>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/script.js"></script>
+</body>
+</html>
