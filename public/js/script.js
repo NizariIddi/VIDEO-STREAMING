@@ -247,63 +247,172 @@ socket.on('chat-message', (data) => {
 
 // ===== FILE HANDLING =====
 
+// Store files with their data
+const uploadedFiles = new Map();
+
 function handleFileSelect(event) {
   const files = event.target.files;
   const fileList = document.getElementById('fileList');
   
   Array.from(files).forEach(file => {
+    const fileId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    const size = (file.size / 1024).toFixed(2);
+    
+    // Store file data
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const fileData = {
+        id: fileId,
+        name: file.name,
+        size: size,
+        type: file.type,
+        data: e.target.result
+      };
+      
+      uploadedFiles.set(fileId, fileData);
+      
+      // Send file info to other users
+      socket.emit('file-shared', { 
+        room, 
+        fileId: fileId,
+        fileName: file.name, 
+        fileSize: size,
+        fileType: file.type,
+        fileData: e.target.result,
+        sender: 'You'
+      });
+    };
+    reader.readAsDataURL(file);
+    
     const fileDiv = document.createElement('div');
     fileDiv.className = 'file-item';
+    fileDiv.dataset.fileId = fileId;
     
-    const size = (file.size / 1024).toFixed(2);
+    const isImage = file.type.startsWith('image/');
+    const isPDF = file.type === 'application/pdf';
+    const canPreview = isImage || isPDF;
     
     fileDiv.innerHTML = `
       <div class="file-icon">
-        <i class="fas fa-file"></i>
+        <i class="fas ${isImage ? 'fa-image' : isPDF ? 'fa-file-pdf' : 'fa-file'}"></i>
       </div>
       <div class="file-info">
         <div class="file-name">${file.name}</div>
         <div class="file-size">${size} KB</div>
       </div>
-      <button onclick="downloadFile(this)" style="min-width: auto; padding: 0.5rem 1rem; width: auto;">
-        <i class="fas fa-download"></i>
-      </button>
+      <div class="file-actions">
+        ${canPreview ? `<button class="file-action-btn" onclick="previewFile('${fileId}')" title="Preview"><i class="fas fa-eye"></i></button>` : ''}
+        <button class="file-action-btn download" onclick="downloadFileById('${fileId}')" title="Download"><i class="fas fa-download"></i></button>
+      </div>
     `;
     
     fileList.appendChild(fileDiv);
-    
-    socket.emit('file-shared', { 
-      room, 
-      fileName: file.name, 
-      fileSize: size,
-      sender: 'You'
-    });
   });
   
   showNotification(`${files.length} file(s) uploaded`);
+  event.target.value = ''; // Reset input
 }
 
 socket.on('file-shared', (data) => {
   const fileList = document.getElementById('fileList');
   const fileDiv = document.createElement('div');
   fileDiv.className = 'file-item';
+  fileDiv.dataset.fileId = data.fileId;
+  
+  // Store received file data
+  uploadedFiles.set(data.fileId, {
+    id: data.fileId,
+    name: data.fileName,
+    size: data.fileSize,
+    type: data.fileType,
+    data: data.fileData
+  });
+  
+  const isImage = data.fileType.startsWith('image/');
+  const isPDF = data.fileType === 'application/pdf';
+  const canPreview = isImage || isPDF;
   
   fileDiv.innerHTML = `
     <div class="file-icon">
-      <i class="fas fa-file"></i>
+      <i class="fas ${isImage ? 'fa-image' : isPDF ? 'fa-file-pdf' : 'fa-file'}"></i>
     </div>
     <div class="file-info">
       <div class="file-name">${data.fileName}</div>
       <div class="file-size">${data.fileSize} KB • From ${data.sender}</div>
     </div>
+    <div class="file-actions">
+      ${canPreview ? `<button class="file-action-btn" onclick="previewFile('${data.fileId}')" title="Preview"><i class="fas fa-eye"></i></button>` : ''}
+      <button class="file-action-btn download" onclick="downloadFileById('${data.fileId}')" title="Download"><i class="fas fa-download"></i></button>
+    </div>
   `;
   
   fileList.appendChild(fileDiv);
-  showNotification(`${data.sender} shared a file`);
+  showNotification(`${data.sender} shared: ${data.fileName}`);
 });
 
-function downloadFile(button) {
-  showNotification('File download started');
+function downloadFileById(fileId) {
+  const fileData = uploadedFiles.get(fileId);
+  if (!fileData) {
+    showNotification('File not found');
+    return;
+  }
+  
+  const a = document.createElement('a');
+  a.href = fileData.data;
+  a.download = fileData.name;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  showNotification(`Downloading ${fileData.name}`);
+}
+
+function previewFile(fileId) {
+  const fileData = uploadedFiles.get(fileId);
+  if (!fileData) {
+    showNotification('File not found');
+    return;
+  }
+  
+  // Create preview modal
+  const modal = document.createElement('div');
+  modal.className = 'modal show';
+  modal.style.display = 'flex';
+  
+  let previewContent = '';
+  
+  if (fileData.type.startsWith('image/')) {
+    previewContent = `<img src="${fileData.data}" style="max-width: 100%; max-height: 70vh; border-radius: 8px;">`;
+  } else if (fileData.type === 'application/pdf') {
+    previewContent = `<iframe src="${fileData.data}" style="width: 100%; height: 70vh; border: none; border-radius: 8px;"></iframe>`;
+  }
+  
+  modal.innerHTML = `
+    <div class="modal-content" style="max-width: 800px; width: 90%;">
+      <div class="modal-header">
+        <h3><i class="fas fa-eye"></i> ${fileData.name}</h3>
+        <button class="close-modal" onclick="this.closest('.modal').remove()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div style="text-align: center; margin-top: 1rem;">
+        ${previewContent}
+      </div>
+      <div style="margin-top: 1.5rem; text-align: center;">
+        <button onclick="downloadFileById('${fileId}')" style="width: auto; padding: 0.8rem 1.5rem;">
+          <i class="fas fa-download"></i> Download File
+        </button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // Close on background click
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.remove();
+    }
+  });
 }
 
 // ===== SCREEN SHARING =====
