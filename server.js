@@ -9,6 +9,7 @@ const io = socketIO(server, {
     origin: "*",
     methods: ["GET", "POST"],
   },
+  maxHttpBufferSize: 1e8 // Increase buffer size to 100MB for large files
 });
 
 app.use(express.static("public"));
@@ -55,18 +56,21 @@ io.on("connection", (socket) => {
   socket.on("chat-message", (data) => {
     console.log(`💬 Message from ${socket.id} in room ${data.room}`);
     socket.to(data.room).emit("chat-message", {
-      sender: data.sender,
+      sender: "Remote User", // Change sender to "Remote User" for recipients
       message: data.message,
       encrypted: data.encrypted,
     });
   });
 
-  // File sharing
+  // File sharing - FIXED: Now forwards complete file data
   socket.on("file-shared", (data) => {
-    console.log(`📁 File shared from ${socket.id} in room ${data.room}`);
+    console.log(`📁 File shared from ${socket.id} in room ${data.room}: ${data.fileName} (${data.fileSize} KB)`);
     socket.to(data.room).emit("file-shared", {
+      fileId: data.fileId,
       fileName: data.fileName,
       fileSize: data.fileSize,
+      fileType: data.fileType,
+      fileData: data.fileData, // IMPORTANT: Forward the actual file data
       sender: data.sender,
     });
   });
